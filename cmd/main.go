@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 
 	"github.com/mx-psi/internalizer/graph"
 	"github.com/mx-psi/internalizer/internalizer"
@@ -37,7 +39,20 @@ func main() {
 		os.Exit(1)
 	}
 
-	for original, new := range moves {
-		fmt.Printf("%s ➝ %s\n", original, new)
+	pkgs := make([]string, 0, len(moves))
+	for pkg := range moves {
+		pkgs = append(pkgs, pkg)
+	}
+	sort.Strings(pkgs)
+
+	for _, pkg := range pkgs {
+		moved := moves[pkg]
+		if strings.HasPrefix(moved, "github.com/DataDog/datadog-agent/internal") ||
+			strings.HasPrefix(moved, "github.com/DataDog/datadog-agent/pkg/internal") ||
+			strings.HasPrefix(moved, "github.com/DataDog/datadog-agent/cmd/internal") {
+			continue
+		}
+
+		fmt.Printf("%s -> %s\n", pkg, moved)
 	}
 }
