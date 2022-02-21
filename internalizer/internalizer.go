@@ -90,7 +90,14 @@ func Internalize(g *graph.Graph) (map[string]string, error) {
 		for importPath := range importedBySet {
 			imports = append(imports, strings.Split(importPath, "/"))
 		}
-		prefix := strings.Join(lcp(imports), "/")
+		splittedPrefix := lcp(imports)
+		prefix := strings.Join(splittedPrefix, "/")
+
+		if splittedPrefix[len(splittedPrefix)-1] == "internal" || strings.HasPrefix(path[len(prefix):], "/internal") {
+			// The folder is already internal!
+			continue
+		}
+
 		if prefix != path {
 			moves[path] = filepath.Join(prefix, "internal", path[len(prefix):])
 		}
