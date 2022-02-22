@@ -40,9 +40,7 @@ func TestGetModulePath(t *testing.T) {
 }
 
 func TestGetModuleStructure(t *testing.T) {
-	graph, err := FromFolder("/Users/pablo.baeyens/Source/internalizer/internal/testdata/module")
-	pkg := graph.Root
-	pkgMap := graph.Univ
+	pkg, pkgMap, err := fromFolderWithUniverse("/Users/pablo.baeyens/Source/internalizer/internal/testdata/module")
 	require.NoError(t, err)
 
 	var paths []string

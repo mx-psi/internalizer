@@ -31,7 +31,7 @@ type walker struct {
 	modName  string
 	basePath string
 	pkg      *Package
-	pkgMap   Universe
+	pkgMap   universe
 }
 
 func (w *walker) getOrCreatePackage(path string) *Package {
@@ -89,11 +89,10 @@ func (w *walker) WalkDir(path string, d fs.DirEntry, err error) error {
 	return err
 }
 
-// FromFolder returns a package and a universe from a given folder.
-func FromFolder(path string) (*Graph, error) {
+func fromFolderWithUniverse(path string) (*Package, universe, error) {
 	modName, err := getModuleName(filepath.Join(path, "go.mod"))
 	if err != nil {
-		return nil, fmt.Errorf("failed to get module name: %w", err)
+		return nil, nil, fmt.Errorf("failed to get module name: %w", err)
 	}
 
 	pkg := newPackage(modName)
@@ -101,15 +100,24 @@ func FromFolder(path string) (*Graph, error) {
 		modName:  modName,
 		basePath: path,
 		pkg:      pkg,
-		pkgMap: Universe{
+		pkgMap: universe{
 			pkg.Fullpath: pkg,
 		},
 	}
 	filesys := os.DirFS(path)
 	err = fs.WalkDir(filesys, ".", walker.WalkDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to walk %q: %w", modName, err)
+		return nil, nil, fmt.Errorf("failed to walk %q: %w", modName, err)
 	}
 
-	return &Graph{walker.pkg, walker.pkgMap}, nil
+	return walker.pkg, walker.pkgMap, nil
+}
+
+// FromFolder returns a package and a universe from a given folder.
+func FromFolder(path string) (*Graph, error) {
+	pkg, _, err := fromFolderWithUniverse(path)
+	if err != nil {
+		return nil, err
+	}
+	return &Graph{Root: pkg}, nil
 }

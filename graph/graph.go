@@ -12,11 +12,10 @@ type Package struct {
 	Imports map[string]*Package
 }
 
-type Universe map[string]*Package
+type universe map[string]*Package
 
 type Graph struct {
 	Root *Package
-	Univ Universe
 }
 
 type WalkGraphFunc func(pkg *Package) error
@@ -28,7 +27,7 @@ func (g *Graph) Walk(fn WalkGraphFunc) error {
 	}
 
 	for _, child := range g.Root.Children {
-		gc := &Graph{Root: child, Univ: g.Univ}
+		gc := &Graph{Root: child}
 		err := gc.Walk(fn)
 		if err != nil {
 			return err
