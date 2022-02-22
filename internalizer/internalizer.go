@@ -10,16 +10,23 @@ import (
 type set map[string]struct{}
 
 type walker struct {
-	// importedBy
+	// modPath is the base module path.
+	modPath string
+	// importedBy lists the packages that import the key package or one of its subpackages
 	importedBy map[string]set
 }
 
 func (w *walker) Walk(pkg *graph.Package) error {
 	for _, importPkg := range pkg.Imports {
-		if _, ok := w.importedBy[importPkg.Fullpath]; !ok {
-			w.importedBy[importPkg.Fullpath] = set{}
+		path := strings.Split(strings.TrimPrefix(importPkg.Fullpath+"/", w.modPath), "/")
+		curPath := w.modPath
+		for _, pathPart := range path {
+			curPath = filepath.Join(curPath, pathPart)
+			if _, ok := w.importedBy[curPath]; !ok {
+				w.importedBy[curPath] = set{}
+			}
+			w.importedBy[curPath][pkg.Fullpath] = struct{}{}
 		}
-		w.importedBy[importPkg.Fullpath][pkg.Fullpath] = struct{}{}
 	}
 	return nil
 }
@@ -76,7 +83,10 @@ func lcp(l [][]string) []string {
 }
 
 func Internalize(g *graph.Graph) (map[string]string, error) {
-	w := &walker{importedBy: map[string]set{}}
+	w := &walker{
+		modPath:    g.Root.Fullpath,
+		importedBy: map[string]set{},
+	}
 	err := g.Walk(w.Walk)
 	if err != nil {
 		return nil, err
