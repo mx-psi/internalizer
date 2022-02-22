@@ -14,15 +14,15 @@ func TestGetModulePath(t *testing.T) {
 		err     string
 	}{
 		{
-			path:    "./..",
+			path:    "./../go.mod",
 			modName: "github.com/mx-psi/internalizer",
 		},
 		{
-			path:    "./../internal/testdata/module",
+			path:    "./../internal/testdata/module/go.mod",
 			modName: "example.com",
 		},
 		{
-			path: "somethingthatdoesntexist",
+			path: "somethingthatdoesntexist/go.mod",
 			err:  "failed to read go.mod at \"somethingthatdoesntexist/go.mod\": open somethingthatdoesntexist/go.mod: no such file or directory",
 		},
 	}
