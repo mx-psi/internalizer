@@ -76,11 +76,24 @@ func (w *walker) walkGoFile(relPath string, d fs.DirEntry) error {
 	return nil
 }
 
+// isSkippable checks if a directory can be skipped
+func isSkippable(dirname string) bool {
+	for _, d := range []string{"testdata", "third_party"} {
+		if dirname == d {
+			return true
+		}
+	}
+	return false
+}
+
 func (w *walker) WalkDir(path string, d fs.DirEntry, err error) error {
 	if err != nil {
 		return err
 	}
 	if d.IsDir() {
+		if isSkippable(d.Name()) {
+			return fs.SkipDir
+		}
 		return nil
 	}
 	if strings.HasSuffix(path, ".go") {
