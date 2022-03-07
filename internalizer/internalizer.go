@@ -14,9 +14,16 @@ type walker struct {
 	modPath string
 	// importedBy lists the packages that import the key package or one of its subpackages
 	importedBy map[string]set
+	// nestedModules for exclusion
+	nestedModules set
 }
 
 func (w *walker) Walk(pkg *graph.Package) error {
+	// annotate nested module
+	if pkg.IsModule && pkg.Fullpath != w.modPath {
+		w.nestedModules[pkg.Fullpath] = struct{}{}
+	}
+
 	for _, importPkg := range pkg.Imports {
 		path := strings.Split(strings.TrimPrefix(importPkg.Fullpath+"/", w.modPath), "/")
 		curPath := w.modPath
@@ -29,6 +36,15 @@ func (w *walker) Walk(pkg *graph.Package) error {
 		}
 	}
 	return nil
+}
+
+func (w *walker) isInNestedModule(fullpath string) bool {
+	for module := range w.nestedModules {
+		if strings.HasPrefix(fullpath, module) {
+			return true
+		}
+	}
+	return false
 }
 
 // lt says if a < b lexicographically.
@@ -84,8 +100,9 @@ func lcp(l [][]string) []string {
 
 func Internalize(g *graph.Graph) (map[string]string, error) {
 	w := &walker{
-		modPath:    g.Root.Fullpath,
-		importedBy: map[string]set{},
+		modPath:       g.Root.Fullpath,
+		importedBy:    map[string]set{},
+		nestedModules: set{},
 	}
 	err := g.Walk(w.Walk)
 	if err != nil {
@@ -95,6 +112,11 @@ func Internalize(g *graph.Graph) (map[string]string, error) {
 	moves := map[string]string{}
 
 	for path, importedBySet := range w.importedBy {
+		if w.isInNestedModule(path) {
+			// skip nested modules
+			continue
+		}
+
 		imports := make([][]string, 0, len(importedBySet)+1)
 		imports = append(imports, strings.Split(path, "/"))
 		for importPath := range importedBySet {
