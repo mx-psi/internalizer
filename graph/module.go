@@ -51,6 +51,17 @@ func (w *walker) getOrCreatePackage(path string) *Package {
 	return cur
 }
 
+func (w *walker) walkGoMod(relPath string, d fs.DirEntry) error {
+	modName, err := getModuleName(filepath.Join(w.basePath, relPath))
+	if err != nil {
+		return err
+	}
+
+	pkg := w.getOrCreatePackage(modName)
+	pkg.IsModule = true
+	return nil
+}
+
 func (w *walker) walkGoFile(relPath string, d fs.DirEntry) error {
 	dir := filepath.Dir(relPath)
 	pkg := w.getOrCreatePackage(w.modName + "/" + dir)
@@ -96,7 +107,9 @@ func (w *walker) WalkDir(path string, d fs.DirEntry, err error) error {
 		}
 		return nil
 	}
-	if strings.HasSuffix(path, ".go") {
+	if strings.HasSuffix(path, "go.mod") {
+		err = w.walkGoMod(path, d)
+	} else if strings.HasSuffix(path, ".go") {
 		err = w.walkGoFile(path, d)
 	}
 	return err

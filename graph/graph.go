@@ -4,6 +4,8 @@ package graph
 type Package struct {
 	// Fullpath of the package, fully qualified.
 	Fullpath string
+	// IsModule states whether the package is the top-level package of a module.
+	IsModule bool
 	// FileList is the list of .go files in the package
 	FileList []string
 	// Children of the package in the package tree
